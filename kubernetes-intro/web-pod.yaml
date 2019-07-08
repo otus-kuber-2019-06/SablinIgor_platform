@@ -1,0 +1,23 @@
+apiVersion: v1 # Версия API
+kind: Pod # Объект, который создаем
+metadata:
+  name: web # Название Pod
+  labels:  # Метки в формате key: value
+    app: nginx
+spec: # Описание Pod
+  containers: # Описание контейнеров внутри Pod
+  - name: web # Название контейнера
+    image: soaron/web:1.0.0 # Образ из которого создается контейнер
+    volumeMounts:
+    - name: app
+      mountPath: /app
+  initContainers:
+  - name: init-web
+    image: busybox:1.31.0
+    volumeMounts:
+    - name: app
+      mountPath: /app
+    command: ['sh', '-c', 'wget -O- --no-check-certificate https://raw.githubusercontent.com/express42/otus-platform-snippets/master/Module-02/Introduction-to-Kubernetes/wget.sh | sh']
+  volumes:
+  - name: app
+    emptyDir: {}
