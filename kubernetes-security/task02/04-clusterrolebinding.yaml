@@ -8,8 +8,6 @@ roleRef:
   name: prometheus-cr
 subjects:
 - kind: ServiceAccount
-  name: carol
-  namespace: prometheus
-- kind: ServiceAccount
-  name: default
-  namespace: prometheus
+  name: system:serviceaccounts:prometheus
+  apiGroup: rbac.authorization.k8s.io
+

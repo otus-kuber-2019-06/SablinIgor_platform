@@ -47,3 +47,10 @@ SablinIgor Platform repository
  - https://stackoverflow.com/questions/9224298/how-do-i-fix-certificate-errors-when-running-wget-on-an-https-url-in-cygwin
  - https://kubernetes.io/docs/concepts/workloads/pods/init-containers/
  - https://kube-forwarder.pixelpoint.io/
+
+# Выполнено ДЗ №1
+
+ - [x] Основное ДЗ
+
+## В процессе сделано:
+ - проверка использования authorization-mode: kubectl cluster-info dump | grep authorization-mode
