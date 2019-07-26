@@ -126,12 +126,12 @@
     kubectl --namespace metallb-system get all
     ~~~~
 
-  - проверка работы балансировщика (убеждаемся, что ответы приходят от разных под-ов, а если присмотреться, то можно увидеть, что под-ы выбираются по алгоритму Round-Robin):
+  - проверка работы балансировщика (убеждаемся, что ответы приходят от разных pod-ов, а если присмотреться, то можно увидеть, что pod-ы выбираются по алгоритму Round-Robin):
   ~~~~
   $ while true; do curl --silent http://172.17.255.1 | grep HOSTNAME; sleep 2; done
   ~~~~
 
-  - вместо колдовства с маршрутизацией извне в кластер (миникуба), можно использовать kube-forward на под ingress-nginx-а. Результат аналогичен:
+  - вместо колдовства с маршрутизацией извне в кластер (миникуба), можно использовать kube-forward на pod ingress-nginx-а. Результат аналогичен:
   ~~~~
   curl http://localhost:4444/ 
   <html>
@@ -150,6 +150,10 @@
     rules:
     - host: localhost
   ~~~~
+
+  - установка Dashboard
+
+  helm install stable/kubernetes-dashboard --name dashboard-release  --set=ingress.enabled=true,ingress.hosts=dashboard
 
   - может когда-нибудь пригодится: /usr/share/logstash/bin/logstash -t -f /etc/logstash/conf.d/ - проверка кофигурации
 

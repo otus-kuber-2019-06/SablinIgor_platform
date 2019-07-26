@@ -3,3 +3,11 @@ helm/
 monitoring/
 ingress/
 volumes/
+
+*.tfstate
+*.tfstate.*.backup
+*.tfstate.backup
+*.tfvars
+.terraform/
+
+*.retry

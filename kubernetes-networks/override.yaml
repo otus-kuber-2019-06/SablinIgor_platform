@@ -1,0 +1,6 @@
+ingress:
+  enabled: true
+  hosts:
+    - localhost
+  paths:
+    - path: /dashboard
