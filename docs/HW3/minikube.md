@@ -61,6 +61,22 @@
      ~~~~
      - значение параметра mode меняется на ipvs
 
+     kubectl --namespace kube-system delete pod --selector='k8s-app=kube-proxy'
+
+     /tmp/iptables.cleanup
+
+      *nat
+      -A POSTROUTING -s 172.17.0.0/16 ! -o docker0 -j MASQUERADE
+      COMMIT
+      *filter
+      COMMIT
+      *mangle
+      COMMIT
+
+      sudo iptables-restore /tmp/iptables.cleanup
+
+      sudo iptables --list -nv -t nat
+
   - до включения ipsv правила маршрутизации выглядят так: https://pastebin.com/X9KeP528
   - сразу после так: https://pastebin.com/82xTiKJd
   - после очистки от устаревших правил: https://pastebin.com/CdbzVNU3
@@ -117,7 +133,9 @@
 
   - установлен MetalLB. Проверка объектов командой:
     ~~~~
+    kubectl apply -f https://raw.githubusercontent.com/google/metallb/v0.8.0/manifests/metallb.yaml
     kubectl --namespace metallb-system get all
+    kubectl apply -f metallb-config.yaml
     ~~~~
 
   - проверка работы балансировщика (убеждаемся, что ответы приходят от разных pod-ов, а если присмотреться, то можно увидеть, что pod-ы выбираются по алгоритму Round-Robin):
@@ -144,3 +162,21 @@
     rules:
     - host: localhost
   ~~~~
+
+Альтернативный старт миникуба (proxy.Mode не работает)
+minikube start --vm-driver hyperkit --memory=4096 --service-cluster-ip-range=10.96.0.0/16 --extra-config=proxy.Mode=ipvs
+
+
+Прокидывание ClusterIP
+minikube tunnel
+
+Добавляем одиночный IP
+sudo route add 172.17.255.1 192.168.64.7
+
+Добавляем подсеть
+sudo route add 172.17.255.0/24 $(minikube ip)
+
+Проверка роутинга
+netstat -nr | grep 192.168.64.7
+
+kubectl cluster-info dump --all-namespaces=true --output-directory="."
