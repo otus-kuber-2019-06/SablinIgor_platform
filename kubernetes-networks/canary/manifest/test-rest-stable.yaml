@@ -1,0 +1,20 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-rest
+spec:
+  selector:
+    matchLabels:
+      app: test-rest
+  template:
+    metadata:
+      labels:
+        app: test-rest
+    spec:
+      containers:
+      - name: web
+        image: soaron/test-rest:0.1
+        ports:
+          - containerPort: 8000
+        imagePullPolicy: Always
