@@ -1,6 +1,6 @@
 ## Ход выполнения ДЗ 
  
- - используется minikube c драйвером VM HyperKit
+ - используется minikube c драйвером VM HyperKit (для звездочек и для заданий, подразумевающих обращение "снаружи" миникуба - на virtualbox, так как использовался ubuntu-виртуалка на bare-metal)
   ~~~~
   minikube start --vm-driver hyperkit
   ~~~~
@@ -8,10 +8,7 @@
   ~~~~
   kubectl config use-context minikube  
   ~~~~
- - установлен kubespy
-  ~~~~
-  brew install kubespy
-  ~~~~
+
   - в манифесты добавлены readinessProbe и livenessProbe для проверки готовности и жизни контейнера
   ~~~~
     readinessProbe:
@@ -131,7 +128,7 @@
     10.96.0.1,tcp:443
     ~~~~
 
-  - установлен MetalLB. Проверка объектов командой:
+  - установлен MetalLB
     ~~~~
     kubectl apply -f https://raw.githubusercontent.com/google/metallb/v0.8.0/manifests/metallb.yaml
     kubectl --namespace metallb-system get all
@@ -139,44 +136,79 @@
     ~~~~
 
   - проверка работы балансировщика (убеждаемся, что ответы приходят от разных pod-ов, а если присмотреться, то можно увидеть, что pod-ы выбираются по алгоритму Round-Robin):
-  ~~~~
-  $ while true; do curl --silent http://172.17.255.1 | grep HOSTNAME; sleep 2; done
-  ~~~~
+    ~~~~
+    $ while true; do curl --silent http://172.17.255.1 | grep HOSTNAME; sleep 2; done
+    ~~~~
 
-  - вместо колдовства с маршрутизацией извне в кластер (миникуба), можно использовать kube-forward на pod ingress-nginx-а. Результат аналогичен:
-  ~~~~
-  curl http://localhost:4444/ 
-  <html>
-  <head><title>404 Not Found</title></head>
-  <body>
-  <center><h1>404 Not Found</h1></center>
-  <hr><center>openresty/1.15.8.1</center>
-  </body>
-  </html> 
-  ~~~~
+  - для обращения к балансировщику "снаружи" от миникуба необходимо пробросить маршрут для нужной подсети через IP миникуба
+    - узнаем IP
+    ~~~~
+    $ minikube ip
+    ~~~~
+    - прописываем маршрут
+    ~~~~
+    ip route add 172.17.255.0/24 via 192.168.99.100
+    ~~~~
 
-  - с небольшой доработкой прошло и внешнее подключение к ингрессу (при условии форварда из предыдущего пункта):
-    - https://pasteboard.co/IpnhOxX.png
-  ~~~~
-  spec:
-    rules:
-    - host: localhost
-  ~~~~
+  - ЗАДАНИЕ СО ЗВЕЗДОЧОЙ
 
-Альтернативный старт миникуба (proxy.Mode не работает)
-minikube start --vm-driver hyperkit --memory=4096 --service-cluster-ip-range=10.96.0.0/16 --extra-config=proxy.Mode=ipvs
+    - для обращения к coredns создаем два сервиса типа Load Balancer (так как мультипорт в LB не подерживается)
+    - чтобы оба сервиса имели один IP используем аннотацию metallb.universe.tf/allow-shared-ip и spec.loadBalancerIP c желаемым адресом (для гарании)
+    - реализация в файле kubernetes-networks/dns-svc-lb.yaml
+    - для обращения к сервису nslookup необходимо использовать ПОЛНОЕ имя сервиса!
+    ~~~~
+    [admin@sandbox ~]$ nslookup kubernetes.default.svc.cluster.local 172.17.255.2
+    Server:        172.17.255.2
+    Address:    172.17.255.2#53
+    Name:    kubernetes.default.svc.cluster.local
+    Address: 10.96.0.1
+    ~~~~
 
+  - Подключение Ingress
 
-Прокидывание ClusterIP
-minikube tunnel
+    - Основной манифест: kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/master/deploy/static/mandatory.yaml
 
-Добавляем одиночный IP
-sudo route add 172.17.255.1 192.168.64.7
+    - Конфигурация ingress определяется в манифесте kubernetes-networks/nginx-lb.yaml
 
-Добавляем подсеть
-sudo route add 172.17.255.0/24 $(minikube ip)
+    - Проверить корректность начальной установки можно обратившись по адресу ingress-контроллера. Мы должны получить 404-ый ответ:
+      ~~~~
+      [admin@sandbox ~]$ curl -kL http://ingress.example.com
+      <html>
+      <head><title>404 Not Found</title></head>
+      <body>
+      <center><h1>404 Not Found</h1></center>
+      <hr><center>openresty/1.15.8.1</center>
+      </body>
+      </html>
+      ~~~~
 
-Проверка роутинга
-netstat -nr | grep 192.168.64.7
+- ЗАДАНИЕ СО ЗВЕЗДОЧОЙ
+  - Canary deploy
 
-kubectl cluster-info dump --all-namespaces=true --output-directory="."
+  - Для демонстрации возможностей Canary-деплоя приложения были созданы:
+    - два докер-образа сервиса, возвращающие номер версии (0.1 и 0.2) - soaron/test-rest:0.1 и soaron/test-rest:0.2. Исходный код сервиса: /kubernetes-networks/canary
+    - манифесты для кубернетеса находятся в каталоге kubernetes-networks/canary/manifest
+    - манифест деплоя приложения и создания сервиса: test-rest-stable.yaml и test-rest-ingress.yaml
+    - манифест деплоя новой приложения и создания сервиса (предполагается деплой в отдельном namespace test-canary): test-rest-canary.yaml и test-rest-ingress-canary.yaml
+  - процесс деплоя выглядит следующим образом
+    ~~~~
+    $ kubectl apply -f test-rest-stable.yaml
+    $ kubectl apply -f test-rest-svc.yaml
+    $ kubectl create ns test-canary
+    $ kubectl apply -f test-rest-canary.yaml -n test-canary
+    $ kubectl apply -f test-rest-ingress-canary.yaml
+    ~~~~
+  - демонстрация того, что на canary-приложение уходит 30% трафика (соответственно настройкам в ingress)
+    ~~~~
+    [admin@sandbox manifest]$ while true; do curl --silent http://ingress.example.com/test; printf "\n"; sleep 2; done
+    Version: 0.1
+    Version: 0.1
+    Version: 0.2
+    Version: 0.1
+    Version: 0.1
+    Version: 0.1
+    Version: 0.2
+    Version: 0.1
+    Version: 0.1
+    Version: 0.2
+    ~~~~
