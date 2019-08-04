@@ -212,3 +212,12 @@
     Version: 0.1
     Version: 0.2
     ~~~~
+
+- ЗАДАНИЕ СО ЗВЕЗДОЧОЙ
+  - Доступ к Dashboard через Ingress
+
+  - Специфика этой настройки заключается в необходимости переопределять аннотацию rewrite в соответствии с тем, что придет в path. Подробности тут: https://kubernetes.github.io/ingress-nginx/examples/rewrite/
+
+  - реализация ингресс: kubernetes-networks/canary/manifest/dashboard-ingress.yaml
+
+  - Скриншот обращени к dashboard: https://pasteboard.co/Ir8F0Q1.png
