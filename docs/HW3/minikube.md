@@ -186,30 +186,24 @@
   - Canary deploy
 
   - Для демонстрации возможностей Canary-деплоя приложения были созданы:
-    - два докер-образа сервиса, возвращающие номер версии (0.1 и 0.2) - soaron/test-rest:0.1 и soaron/test-rest:0.2. Исходный код сервиса: /kubernetes-networks/canary
+    - два докер-образа приложения, возвращающие номер версии (0.1 и 0.2) - soaron/test-rest:0.1 и soaron/test-rest:0.2. Исходный код приложения: /kubernetes-networks/canary
     - манифесты для кубернетеса находятся в каталоге kubernetes-networks/canary/manifest
-    - манифест деплоя приложения и создания сервиса: test-rest-stable.yaml и test-rest-ingress.yaml
-    - манифест деплоя новой приложения и создания сервиса (предполагается деплой в отдельном namespace test-canary): test-rest-canary.yaml и test-rest-ingress-canary.yaml
+    - манифест деплоя приложения и создания сервиса: test-rest-stable.yaml
+    - манифест деплоя новой приложения и создания сервиса: test-rest-canary.yaml
+    - манифесты ресурсов ingress для текущей и новой версии приложения - 
   - процесс деплоя выглядит следующим образом
     ~~~~
     $ kubectl apply -f test-rest-stable.yaml
-    $ kubectl apply -f test-rest-svc.yaml
-    $ kubectl create ns test-canary
-    $ kubectl apply -f test-rest-canary.yaml -n test-canary
+    $ kubectl apply -f test-rest-canary.yaml
+    $ kubectl apply -f test-rest-ingress.yaml
     $ kubectl apply -f test-rest-ingress-canary.yaml
     ~~~~
-  - демонстрация того, что на canary-приложение уходит 30% трафика (соответственно настройкам в ingress)
+  - демонстрация того, что на canary-приложение уходит запрос, содержащий в HTTP заголовках пару "greenfield: true" 
     ~~~~
-    [admin@sandbox manifest]$ while true; do curl --silent http://ingress.example.com/test; printf "\n"; sleep 2; done
+    [admin@sandbox manifest]$ curl -kL http://ingress.example.com/test
     Version: 0.1
-    Version: 0.1
-    Version: 0.2
-    Version: 0.1
-    Version: 0.1
-    Version: 0.1
-    Version: 0.2
-    Version: 0.1
-    Version: 0.1
+
+    [admin@sandbox manifest]$ curl -kL --header 'greenfield: true'  http://ingress.example.com/test
     Version: 0.2
     ~~~~
 

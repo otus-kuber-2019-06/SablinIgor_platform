@@ -2,15 +2,15 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: test-rest
+  name: test-rest-new
 spec:
   selector:
     matchLabels:
-      app: test-rest
+      app: test-rest-new
   template:
     metadata:
       labels:
-        app: test-rest
+        app: test-rest-new
     spec:
       containers:
       - name: web
@@ -22,10 +22,10 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: test-rest-svc
+  name: test-rest-svc-new
 spec:
   selector:
-    app: test-rest
+    app: test-rest-new
   ports:
   - protocol: TCP
     port: 80
