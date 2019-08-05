@@ -8,6 +8,12 @@ spec: # Описание Pod
   containers: # Описание контейнеров внутри Pod
   - name: web # Название контейнера
     image: soaron/web:1.0.0 # Образ из которого создается контейнер
+    readinessProbe:
+      httpGet:
+        path: /index.html
+        port: 80
+    livenessProbe:
+      tcpSocket: { port: 8000 }
     volumeMounts:
     - name: app
       mountPath: /app

@@ -1,0 +1,16 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+  name: test-rest
+  namespace: default
+spec:
+  rules:
+    - host: ingress.example.com
+      http:
+        paths:
+          - backend:
+              serviceName: test-rest-svc
+              servicePort: 80
+            path: /test
