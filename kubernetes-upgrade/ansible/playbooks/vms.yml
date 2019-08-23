@@ -1,0 +1,40 @@
+api_host: m11618.contaboserver.net
+api_user: root@pam
+api_password: XXXXXXXXXXXX
+node: m11618
+clone_vm: template-centos7
+temp_keys_dir: ~/.ssh/temp_keys
+ssh_keys_dir: ~/.ssh
+vms:
+  master:
+    name: master.otus.ru
+    ipaddress: 10.21.21.51/24
+    gateway: 10.21.21.254
+    vmid: 200
+    cores: 2
+    sockets: 1
+    memory: 8192
+  worker1:
+    name: worker1.otus.ru
+    ipaddress: 10.21.21.52/24
+    gateway: 10.21.21.254
+    vmid: 201
+    cores: 1
+    sockets: 1
+    memory: 4096
+  worker2:
+    name: worker2.otus.ru
+    ipaddress: 10.21.21.53/24
+    gateway: 10.21.21.254
+    vmid: 202
+    cores: 1
+    sockets: 1
+    memory: 4096
+  worker3:
+    name: worker3.otus.ru
+    ipaddress: 10.21.21.54/24
+    gateway: 10.21.21.254
+    vmid: 203
+    cores: 1
+    sockets: 1
+    memory: 4096
