@@ -1,0 +1,44 @@
+---
+- name: Initial setup VM
+  become: true
+  hosts: k8s
+
+  vars:
+    pip_install_packages:
+      - name: docker
+
+  roles:
+    - geerlingguy.repo-epel
+    - geerlingguy.pip
+    - { role: geerlingguy.docker, vars: { docker_package: "docker-{{ docker_edition }}-18.06.3.ce-3.el7" } }
+
+  tasks:
+    - name: Add user to docker group
+      user:
+        name: 'sablin'
+        groups: docker
+        append: yes
+
+    - name: Disable SWAP since kubernetes can't work with swap enabled (1/2)
+      shell: |
+        swapoff -a
+
+    - name: Disable SWAP in fstab since kubernetes can't work with swap enabled (2/2)
+      replace:
+        path: /etc/fstab
+        regexp: '^(.+?\sswap\s+sw\s+.*)$'
+        replace: '# \1'
+
+    - name: Disable firewall
+      service:
+        name: firewalld
+        state: stopped
+        enabled: False
+
+    - name: IP forward on
+      sysctl:
+        name: net.ipv4.ip_forward
+        value: 1
+        sysctl_set: yes
+        state: present
+        reload: yes

@@ -11,3 +11,5 @@ volumes/
 .terraform/
 
 *.retry
+
+roles/

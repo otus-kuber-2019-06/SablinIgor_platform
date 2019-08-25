@@ -11,16 +11,19 @@
 Для этого используется плейбук ансибла - kubernetes-upgrade/ansible/playbooks/create_vm.yml: создается один мастер-узел и три рабочих узла.
 
 ~~~~
-ansible-playbook playbooks/logging.yml --extra-vars="api_password=XXXXXXXX"
+ansible-playbook playbooks/create_vm.yml --extra-vars="api_password=XXXXXXXX"
 ~~~~
 
 ### Предварительные настройки узлов
 
-На всех узлах:
+При помощи playbook-а kubernetes-upgrade/ansible/playbooks/setup_vm.yml:
   - установлен docker версии 18.06
   - отключен swap
   - включена маршрутизация (net.ipv4.ip_forward = 1 >> /etc/sysctl.conf)
   - отключен firewall
+~~~~
+ansible-playbook playbooks/setup_vm.yml
+~~~~
 
 ### Установка утилит
 
