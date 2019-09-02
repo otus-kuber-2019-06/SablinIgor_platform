@@ -13,3 +13,5 @@ volumes/
 *.retry
 
 roles/
+
+kubespray/
