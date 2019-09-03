@@ -1,4 +1,4 @@
-# Выполнено ДЗ №5
+# Выполнено ДЗ №6
 
  - [x] Основное ДЗ
  - [x] Задание со *
@@ -7,19 +7,39 @@
 
 ### Задание обычное
 
-kind create cluster --config ~/kind/config/cluster.yaml --wait 300s
+1. При создании кластера используется конфиг с указанием включить флаг VolumeSnapshotDataSource.
+   Без него CSI не сможет восстановить данные из snapshot-а.
+   При создании кластера используем одноузловую схему. Для кластера с несколькими узлами понадобятся дополнительные пляски с бубном.
 
+~~~~bash
+kind create cluster --config ~/kind/config/cluster.yaml --wait 300s
+~~~~
+
+2. Скачиваем и устанавливаем CSI-драйвер
+
+~~~~bash
 git clone https://github.com/kubernetes-csi/csi-driver-host-path.git
 
 ./csi-driver-host-path/deploy/kubernetes-1.15/deploy-hostpath.sh
+~~~~
 
+3. Последовательно устанавливаем манифесты с:
 
+   - Storage Class-ом: kubernetes-storage/hw/01-storage-class.yaml
+
+   - Persistent Volume Claim: kubernetes-storage/hw/02-pvc.yaml
+
+   - Собственно pod: kubernetes-storage/hw/03-pod-pvc.yaml
+
+4. Смотрим на результат
+
+~~~~
 [admin@sandbox manifests]$ kubectl describe pod storage-pod
 Name:         storage-pod
 Namespace:    default
 Priority:     0
 Node:         kind-control-plane/192.168.254.2
-Start Time:   Tue, 03 Sep 2019 10:07:40 -0400
+Start Time:   Tue, 03 Sep 2019 11:00:39 -0400
 Labels:       name=storage-pod
 Annotations:  kubectl.kubernetes.io/last-applied-configuration:
                 {"apiVersion":"v1","kind":"Pod","metadata":{"annotations":{},"labels":{"name":"storage-pod"},"name":"storage-pod","namespace":"default"},"...
@@ -28,7 +48,62 @@ IP:
 Containers:
   busybox:
     Container ID:
-    Image:         gcr.io/google_containers/busybox
+    Image:         ubuntu
+    Image ID:
+    Port:          <none>
+    Host Port:     <none>
+    Command:
+      /bin/sh
+      -c
+    Args:
+      tail -f /dev/null
+    State:          Waiting
+      Reason:       ContainerCreating
+    Ready:          False
+    Restart Count:  0
+    Environment:    <none>
+    Mounts:
+      /data from vol (rw)
+      /var/run/secrets/kubernetes.io/serviceaccount from default-token-x77k8 (ro)
+Conditions:
+  Type              Status
+  Initialized       True
+  Ready             False
+  ContainersReady   False
+  PodScheduled      True
+Volumes:
+  vol:
+    Type:       PersistentVolumeClaim (a reference to a PersistentVolumeClaim in the same namespace)
+    ClaimName:  storage-pvc
+    ReadOnly:   false
+  default-token-x77k8:
+    Type:        Secret (a volume populated by a Secret)
+    SecretName:  default-token-x77k8
+    Optional:    false
+QoS Class:       BestEffort
+Node-Selectors:  <none>
+Tolerations:     node.kubernetes.io/not-ready:NoExecute for 300s
+                 node.kubernetes.io/unreachable:NoExecute for 300s
+Events:
+  Type    Reason                  Age   From                     Message
+  ----    ------                  ----  ----                     -------
+  Normal  Scheduled               5s    default-scheduler        Successfully assigned default/storage-pod to kind-control-plane
+  Normal  SuccessfulAttachVolume  5s    attachdetach-controller  AttachVolume.Attach succeeded for volume "pvc-d4859557-0bb0-4c8c-84d2-6566e1164f96"
+[admin@sandbox manifests]$ kubectl describe pod storage-pod
+Name:         storage-pod
+Namespace:    default
+Priority:     0
+Node:         kind-control-plane/192.168.254.2
+Start Time:   Tue, 03 Sep 2019 11:00:39 -0400
+Labels:       name=storage-pod
+Annotations:  kubectl.kubernetes.io/last-applied-configuration:
+                {"apiVersion":"v1","kind":"Pod","metadata":{"annotations":{},"labels":{"name":"storage-pod"},"name":"storage-pod","namespace":"default"},"...
+Status:       Pending
+IP:
+Containers:
+  busybox:
+    Container ID:
+    Image:         ubuntu
     Image ID:
     Port:          <none>
     Host Port:     <none>
@@ -67,25 +142,81 @@ Tolerations:     node.kubernetes.io/not-ready:NoExecute for 300s
 Events:
   Type    Reason                  Age   From                         Message
   ----    ------                  ----  ----                         -------
-  Normal  Scheduled               6s    default-scheduler            Successfully assigned default/storage-pod to kind-control-plane
-  Normal  SuccessfulAttachVolume  5s    attachdetach-controller      AttachVolume.Attach succeeded for volume "pvc-d4859557-0bb0-4c8c-84d2-6566e1164f96"
-  Normal  Pulling                 1s    kubelet, kind-control-plane  Pulling image "gcr.io/google_containers/busybox"
+  Normal  Scheduled               7s    default-scheduler            Successfully assigned default/storage-pod to kind-control-plane
+  Normal  SuccessfulAttachVolume  7s    attachdetach-controller      AttachVolume.Attach succeeded for volume "pvc-d4859557-0bb0-4c8c-84d2-6566e1164f96"
+  Normal  Pulling                 2s    kubelet, kind-control-plane  Pulling image "ubuntu"
 [admin@sandbox manifests]$ kubectl describe pod storage-pod
 Name:         storage-pod
 Namespace:    default
 Priority:     0
 Node:         kind-control-plane/192.168.254.2
-Start Time:   Tue, 03 Sep 2019 10:07:40 -0400
+Start Time:   Tue, 03 Sep 2019 11:00:39 -0400
+Labels:       name=storage-pod
+Annotations:  kubectl.kubernetes.io/last-applied-configuration:
+                {"apiVersion":"v1","kind":"Pod","metadata":{"annotations":{},"labels":{"name":"storage-pod"},"name":"storage-pod","namespace":"default"},"...
+Status:       Pending
+IP:
+Containers:
+  busybox:
+    Container ID:
+    Image:         ubuntu
+    Image ID:
+    Port:          <none>
+    Host Port:     <none>
+    Command:
+      /bin/sh
+      -c
+    Args:
+      tail -f /dev/null
+    State:          Waiting
+      Reason:       ContainerCreating
+    Ready:          False
+    Restart Count:  0
+    Environment:    <none>
+    Mounts:
+      /data from vol (rw)
+      /var/run/secrets/kubernetes.io/serviceaccount from default-token-x77k8 (ro)
+Conditions:
+  Type              Status
+  Initialized       True
+  Ready             False
+  ContainersReady   False
+  PodScheduled      True
+Volumes:
+  vol:
+    Type:       PersistentVolumeClaim (a reference to a PersistentVolumeClaim in the same namespace)
+    ClaimName:  storage-pvc
+    ReadOnly:   false
+  default-token-x77k8:
+    Type:        Secret (a volume populated by a Secret)
+    SecretName:  default-token-x77k8
+    Optional:    false
+QoS Class:       BestEffort
+Node-Selectors:  <none>
+Tolerations:     node.kubernetes.io/not-ready:NoExecute for 300s
+                 node.kubernetes.io/unreachable:NoExecute for 300s
+Events:
+  Type    Reason                  Age   From                         Message
+  ----    ------                  ----  ----                         -------
+  Normal  Scheduled               9s    default-scheduler            Successfully assigned default/storage-pod to kind-control-plane
+  Normal  SuccessfulAttachVolume  9s    attachdetach-controller      AttachVolume.Attach succeeded for volume "pvc-d4859557-0bb0-4c8c-84d2-6566e1164f96"
+  Normal  Pulling                 4s    kubelet, kind-control-plane  Pulling image "ubuntu"
+[admin@sandbox manifests]$ kubectl describe pod storage-pod
+Name:         storage-pod
+Namespace:    default
+Priority:     0
+Node:         kind-control-plane/192.168.254.2
+Start Time:   Tue, 03 Sep 2019 11:00:39 -0400
 Labels:       name=storage-pod
 Annotations:  kubectl.kubernetes.io/last-applied-configuration:
                 {"apiVersion":"v1","kind":"Pod","metadata":{"annotations":{},"labels":{"name":"storage-pod"},"name":"storage-pod","namespace":"default"},"...
 Status:       Running
-IP:           10.244.0.8
+IP:           10.244.0.9
 Containers:
   busybox:
-    Container ID:  containerd://c18343c211e95014e555c5e595ca5ed93d39e361a57af77249e0847235afeef2
-    Image:         gcr.io/google_containers/busybox
-    Image ID:      sha256:36a4dca0fe6fb2a5133dc11a6c8907a97aea122613fa3e98be033959a0821a1f
+    Container ID:  containerd://046d6c533fc73fd5677478d042699c97197ef30dc36acf949445697f5640053f
+    Image:         ubuntu
+    Image ID:      docker.io/library/ubuntu@sha256:d1d454df0f579c6be4d8161d227462d69e163a8ff9d20a847533989cf0c94d90
     Port:          <none>
     Host Port:     <none>
     Command:
@@ -94,7 +225,7 @@ Containers:
     Args:
       tail -f /dev/null
     State:          Running
-      Started:      Tue, 03 Sep 2019 10:07:47 -0400
+      Started:      Tue, 03 Sep 2019 11:00:51 -0400
     Ready:          True
     Restart Count:  0
     Environment:    <none>
@@ -121,17 +252,17 @@ Node-Selectors:  <none>
 Tolerations:     node.kubernetes.io/not-ready:NoExecute for 300s
                  node.kubernetes.io/unreachable:NoExecute for 300s
 Events:
-  Type    Reason                  Age   From                         Message
-  ----    ------                  ----  ----                         -------
-  Normal  Scheduled               10s   default-scheduler            Successfully assigned default/storage-pod to kind-control-plane
-  Normal  SuccessfulAttachVolume  9s    attachdetach-controller      AttachVolume.Attach succeeded for volume "pvc-d4859557-0bb0-4c8c-84d2-6566e1164f96"
-  Normal  Pulling                 5s    kubelet, kind-control-plane  Pulling image "gcr.io/google_containers/busybox"
-  Normal  Pulled                  2s    kubelet, kind-control-plane  Successfully pulled image "gcr.io/google_containers/busybox"
-  Normal  Created                 2s    kubelet, kind-control-plane  Created container busybox
-  Normal  Started                 2s    kubelet, kind-control-plane  Started container busybox
+  Type    Reason                  Age    From                         Message
+  ----    ------                  ----   ----                         -------
+  Normal  Scheduled               5m59s  default-scheduler            Successfully assigned default/storage-pod to kind-control-plane
+  Normal  SuccessfulAttachVolume  5m59s  attachdetach-controller      AttachVolume.Attach succeeded for volume "pvc-d4859557-0bb0-4c8c-84d2-6566e1164f96"
+  Normal  Pulling                 5m54s  kubelet, kind-control-plane  Pulling image "ubuntu"
+  Normal  Pulled                  5m48s  kubelet, kind-control-plane  Successfully pulled image "ubuntu"
+  Normal  Created                 5m48s  kubelet, kind-control-plane  Created container busybox
+  Normal  Started                 5m47s  kubelet, kind-control-plane  Started container busybox
+~~~~
 
-
-
+~~~~bash
 [admin@sandbox kind]$ kubectl get po
 NAME                         READY   STATUS    RESTARTS   AGE
 csi-hostpath-attacher-0      1/1     Running   0          93s
@@ -139,7 +270,7 @@ csi-hostpath-provisioner-0   1/1     Running   0          91s
 csi-hostpath-snapshotter-0   1/1     Running   0          90s
 csi-hostpath-socat-0         1/1     Running   0          89s
 csi-hostpathplugin-0         3/3     Running   0          92s
-
+~~~~
 
 
 
