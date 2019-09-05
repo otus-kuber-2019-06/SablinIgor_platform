@@ -7,3 +7,4 @@ SablinIgor Platform repository
 - [HW4](docs/HW4/README.md)
 - [HW5 - Upgrade](docs/HW5/README.md)
 - [HW6 - Storage](docs/HW6/README.md)
+- [HW7 - Debug](docs/HW7/README.md)
